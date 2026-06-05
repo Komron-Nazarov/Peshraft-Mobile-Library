@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "metro.proxy.rlwy.net",
+            "port": 28147,
+            "driver": "PostgreSQL",
+            "name": "Railway-Prod",
+            "database": "railway",
+            "username": "postgres",
+            "password": "nQkFXRuHRfOUkzFazVXQIazwHSjeVGct"
+        }
+    ]
+}

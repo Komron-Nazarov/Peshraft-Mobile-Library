@@ -1,0 +1,1 @@
+UPDATE users SET role = 'admin', job_position = 'Fullstack Developer' WHERE id = 8;

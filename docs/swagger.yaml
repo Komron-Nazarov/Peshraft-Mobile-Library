@@ -1,0 +1,395 @@
+basePath: /
+definitions:
+  models.RegisterRequest:
+    properties:
+      confirm_password:
+        type: string
+      date_of_birth:
+        example: "2008-04-12"
+        type: string
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 100
+        minLength: 6
+        type: string
+      phone:
+        maxLength: 20
+        minLength: 10
+        type: string
+    required:
+    - confirm_password
+    - date_of_birth
+    - email
+    - name
+    - password
+    - phone
+    type: object
+host: melodious-friendship-production-e718.up.railway.app
+info:
+  contact:
+    name: Komron Nazarov
+  description: API server for Shogun's Library (Mobile & Web Admin).
+  title: Mobile Library API
+  version: "1.0"
+paths:
+  /admin/filters:
+    get:
+      description: Возвращает список всех уникальных категорий книг
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties:
+                type: string
+              type: object
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Список категорий
+      tags:
+      - books
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new account with trim and lowercase email
+      parameters:
+      - description: Registration Info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User Registration
+      tags:
+      - auth
+  /books:
+    get:
+      description: Get a paginated list of all books
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all books
+      tags:
+      - books
+  /books/{id}:
+    get:
+      description: Get detailed information about a specific book
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get book by ID
+      tags:
+      - books
+  /books/search:
+    get:
+      description: Search books by title, author or category
+      parameters:
+      - description: Book title
+        in: query
+        name: title
+        type: string
+      - description: Book author
+        in: query
+        name: author
+        type: string
+      - description: Book category
+        in: query
+        name: category
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Search books
+      tags:
+      - books
+  /borrow/{id}:
+    post:
+      description: Borrow a book by its ID for the authenticated user
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Borrow a book
+      tags:
+      - borrow
+  /borrow/{id}/return:
+    post:
+      description: Return a borrowed book by its ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Return a book
+      tags:
+      - borrow
+  /favorites:
+    get:
+      description: Get a list of all favorite books for the authenticated user
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List favorite books
+      tags:
+      - favorites
+  /favorites/{book_id}:
+    delete:
+      description: Remove a specific book from the authenticated user's favorites
+        list
+      parameters:
+      - description: Book ID
+        in: path
+        name: book_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Remove book from favorites
+      tags:
+      - favorites
+    post:
+      description: Add a specific book to the authenticated user's favorites list
+      parameters:
+      - description: Book ID
+        in: path
+        name: book_id
+        required: true
+        type: integer
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Add book to favorites
+      tags:
+      - favorites
+  /notifications:
+    get:
+      description: Get all notifications and unread count for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get user notifications
+      tags:
+      - notifications
+  /notifications/{id}/read:
+    post:
+      description: Update the status of a specific notification to read
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Mark notification as read
+      tags:
+      - notifications
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'Введите токен в формате: Bearer <your_token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
