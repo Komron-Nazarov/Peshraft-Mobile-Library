@@ -26,33 +26,54 @@ func (s *UserService) GetProfile(id uint) (*models.UserResponse, error) {
 	return &resp, nil
 }
 
-func (s *UserService) UpdateProfile(id uint, req models.UpdateProfileRequest) (*models.UserResponse, error) {
-	// Проверяем существование пользователя
-	user, err := s.userRepo.FindByID(id)
-	if err != nil {
-		return nil, fmt.Errorf("user not found")
-	}
+// func (s *UserService) UpdateProfile(id uint, req models.UpdateProfileRequest) (*models.UserResponse, error) {
+// 	// Проверяем существование пользователя
+// 	user, err := s.userRepo.FindByID(id)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("user not found")
+// 	}
 
-	// Валидация (минимум логики)
-	if req.Name != "" {
-		if len(req.Name) < 2 {
-			return nil, errors.New("name is too short")
-		}
-		user.Name = req.Name
-	}
+// 	// Валидация (минимум логики)
+// 	if req.Name != "" {
+// 		if len(req.Name) < 2 {
+// 			return nil, errors.New("name is too short")
+// 		}
+// 		user.Name = req.Name
+// 	}
 
-	if req.Phone != "" {
-		// Здесь можно добавить регулярку для проверки телефона
-		user.Phone = req.Phone
-	}
+// 	if req.Phone != "" {
+// 		// Здесь можно добавить регулярку для проверки телефона
+// 		user.Phone = req.Phone
+// 	}
 
-	// Сохраняем только измененные поля
-	if err := s.userRepo.Update(user); err != nil {
-		return nil, fmt.Errorf("failed to update profile: %w", err)
-	}
+// 	// Сохраняем только измененные поля
+// 	if err := s.userRepo.Update(user); err != nil {
+// 		return nil, fmt.Errorf("failed to update profile: %w", err)
+// 	}
 
-	resp := user.ToResponse()
-	return &resp, nil
+// 	resp := user.ToResponse()
+// 	return &resp, nil
+// }
+
+func (s *UserService) UpdateProfile(userID uint, req models.UpdateProfileRequest) (models.UserResponse, error) {
+    // 1. Сначала получаем текущего юзера из репозитория
+    user, err := s.userRepo.FindByID(userID)
+    if err != nil {
+        return models.UserResponse{}, err
+    }
+
+    // 2. Обновляем поля, если они переданы в запросе
+    if req.Name != "" { user.Name = req.Name }
+    if req.Phone != "" { user.Phone = req.Phone }
+    if req.DateOfBirth != "" { user.DateOfBirth = req.DateOfBirth }
+    if req.JobPosition != "" { user.JobPosition = req.JobPosition } // СТРОКА ДЛЯ ПРОВЕРКИ/ДОБАВЛЕНИЯ
+
+    // 3. Сохраняем в базу данных через репозиторий
+    if err := s.userRepo.Update(user); err != nil {
+        return models.UserResponse{}, err
+    }
+
+    return user.ToResponse(), nil
 }
 
 func (s *UserService) ChangePassword(id uint, req models.ChangePasswordRequest) error {

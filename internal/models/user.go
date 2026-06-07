@@ -101,11 +101,11 @@ type UserResponse struct {
 }
 
 type UpdateProfileRequest struct {
-    Name        string `json:"name" binding:"omitempty,min=2,max=100"`
-    Phone       string `json:"phone" binding:"omitempty,min=10,max=20"`
-    DateOfBirth string `json:"date_of_birth" binding:"omitempty"`
+	Name        string `json:"name" binding:"omitempty,min=2,max=100"`
+	Phone       string `json:"phone" binding:"omitempty,min=10,max=20"`
+	DateOfBirth string `json:"date_of_birth" binding:"omitempty"`
+	JobPosition string `json:"job_position" binding:"omitempty"`
 }
-
 type ChangePasswordRequest struct {
     OldPassword string `json:"old_password" binding:"required,min=6"`
     NewPassword string `json:"new_password" binding:"required,min=6,max=100"`
@@ -123,3 +123,4 @@ func (u *User) ToResponse() UserResponse {
         CreatedAt:   u.CreatedAt,
     }
 }
+
