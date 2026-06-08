@@ -1615,8 +1615,120 @@ func (h *AdminHandler) DeleteReturnRequest(c *gin.Context)  { c.JSON(http.Status
 func (h *AdminHandler) GetNotifications(c *gin.Context)     { c.JSON(http.StatusOK, gin.H{"notifications": []string{}}) }
 func (h *AdminHandler) AcceptReturnRequest(c *gin.Context)  { c.JSON(http.StatusOK, gin.H{"message": "accepted"}) }
 
-// Новые методы для управления фильтрами
-func (h *AdminHandler) GetFilters(c *gin.Context)    { c.JSON(http.StatusOK, gin.H{"filters": []string{}}) }
-func (h *AdminHandler) AddFilter(c *gin.Context)     { c.JSON(http.StatusOK, gin.H{"message": "added"}) }
-func (h *AdminHandler) UpdateFilter(c *gin.Context)  { c.JSON(http.StatusOK, gin.H{"message": "updated"}) }
-func (h *AdminHandler) DeleteFilter(c *gin.Context)  { c.JSON(http.StatusOK, gin.H{"message": "deleted"}) }
+// // Новые методы для управления фильтрами
+// func (h *AdminHandler) GetFilters(c *gin.Context)    { c.JSON(http.StatusOK, gin.H{"filters": []string{}}) }
+// func (h *AdminHandler) AddFilter(c *gin.Context)     { c.JSON(http.StatusOK, gin.H{"message": "added"}) }
+// func (h *AdminHandler) UpdateFilter(c *gin.Context)  { c.JSON(http.StatusOK, gin.H{"message": "updated"}) }
+// func (h *AdminHandler) DeleteFilter(c *gin.Context)  { c.JSON(http.StatusOK, gin.H{"message": "deleted"}) }
+
+
+
+
+
+
+
+// Структура для парсинга входящего JSON-запроса от фронтенда
+type FilterRequest struct {
+	Name string `json:"name" binding:"required,min=2,max=100"`
+}
+
+// GetFilters — Получение всех категорий/фильтров из базы данных
+func (h *AdminHandler) GetFilters(c *gin.Context) {
+	query := `SELECT id, name FROM categories ORDER BY name ASC`
+	rows, err := h.db.GetConn().Query(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении фильтров из базы данных"})
+		return
+	}
+	defer rows.Close()
+
+	type FilterResponse struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}
+
+	var list []FilterResponse
+	for rows.Next() {
+		var f FilterResponse
+		if err := rows.Scan(&f.ID, &f.Name); err == nil {
+			list = append(list, f)
+		}
+	}
+
+	if list == nil {
+		list = []FilterResponse{} // Возвращаем пустой массив [] вместо null
+	}
+
+	c.JSON(http.StatusOK, gin.H{"filters": list})
+}
+
+// AddFilter — Реальное сохранение нового фильтра/категории в БД
+func (h *AdminHandler) AddFilter(c *gin.Context) {
+	var req FilterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Имя фильтра обязательно (минимум 2 символа)"})
+		return
+	}
+
+	query := `INSERT INTO categories (name) VALUES ($1) RETURNING id`
+	var newID int
+	err := h.db.GetConn().QueryRow(query, req.Name).Scan(&newID)
+	if err != nil {
+		// Проверяем на дубликат (если уникальное имя уже существует)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Такой фильтр или категория уже существует"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Фильтр успешно добавлен",
+		"filter": gin.H{
+			"id":   newID,
+			"name": req.Name,
+		},
+	})
+}
+
+// UpdateFilter — Редактирование существующего фильтра по ID
+func (h *AdminHandler) UpdateFilter(c *gin.Context) {
+	id := c.Param("id")
+	var req FilterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Новое имя фильтра некорректно"})
+		return
+	}
+
+	query := `UPDATE categories SET name = $1 WHERE id = $2`
+	res, err := h.db.GetConn().Exec(query, req.Name, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении фильтра"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Фильтр с таким ID не найден"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Фильтр успешно обновлен"})
+}
+
+// DeleteFilter — Удаление фильтра из БД
+func (h *AdminHandler) DeleteFilter(c *gin.Context) {
+	id := c.Param("id")
+
+	query := `DELETE FROM categories WHERE id = $1`
+	res, err := h.db.GetConn().Exec(query, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Нельзя удалить фильтр, так как он используется в книгах"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Фильтр с таким ID не найден"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Фильтр успешно удален"})
+}
